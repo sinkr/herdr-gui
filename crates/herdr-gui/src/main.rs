@@ -1878,12 +1878,25 @@ impl HerdrGui {
     }
 
     fn terminal_only_view(&self, theme: UiTheme, cx: &mut Context<Self>) -> AnyElement {
+        static FONT: std::sync::LazyLock<(String, f32)> = std::sync::LazyLock::new(|| {
+            let family = std::env::var("HERDR_GUI_FONT")
+                .ok()
+                .filter(|value| !value.trim().is_empty())
+                .unwrap_or_else(|| "Menlo".to_string());
+            let size = std::env::var("HERDR_GUI_FONT_SIZE")
+                .ok()
+                .and_then(|value| value.trim().parse::<f32>().ok())
+                .filter(|value| (6.0..=72.0).contains(value))
+                .unwrap_or(12.0);
+            (family, size)
+        });
+        let (family, size) = (FONT.0.clone(), FONT.1);
         div()
             .flex_1()
             .overflow_hidden()
-            .text_size(px(12.0))
-            .font_family("Menlo")
-            .line_height(px(18.0))
+            .text_size(px(size))
+            .font_family(family)
+            .line_height(px(size * 1.5))
             .text_color(rgb(theme.text))
             .on_scroll_wheel(cx.listener(Self::handle_terminal_scroll))
             .child(cached_terminal(self.terminal_pane.clone()))
